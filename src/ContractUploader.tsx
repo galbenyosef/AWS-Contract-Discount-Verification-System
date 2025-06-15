@@ -1,5 +1,4 @@
-import React, { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import React, { useCallback, useState, useRef } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 
 // Configure PDF.js worker - use the CDN version that works
@@ -242,10 +241,11 @@ const parseContractText = (text: string): ContractData => {
 const ContractUploader: React.FC<Props> = ({ onParsed, onError }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
+  const processFile = useCallback(
+    async (file: File) => {
       if (!file) {
         onError("No file selected");
         return;
@@ -313,21 +313,63 @@ const ContractUploader: React.FC<Props> = ({ onParsed, onError }) => {
     [onParsed, onError]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "application/pdf": [] },
-    multiple: false,
-  });
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        processFile(file);
+      }
+    },
+    [processFile]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragActive(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      const file = files[0];
+      if (file) {
+        processFile(file);
+      }
+    },
+    [processFile]
+  );
+
+  const handleClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   return (
     <div className="card card-shadow">
       <div className="card-body p-4">
         <h2 className="card-title h4 mb-3">Upload Contract</h2>
         <div
-          {...getRootProps()}
           className={`upload-zone ${isDragActive ? "drag-active" : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleClick}
+          style={{ cursor: "pointer" }}
         >
-          <input {...getInputProps()} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
           {isLoading ? (
             <div className="text-center">
               <div className="progress mb-3" style={{ height: "8px" }}>
