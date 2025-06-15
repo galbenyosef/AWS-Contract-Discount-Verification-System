@@ -34,9 +34,6 @@ const parseContractText = (text: string): ContractData => {
   const eligibleServices: string[] = [];
   const excludedServices: string[] = [];
 
-  // Debug: Log the extracted text to see what we're working with
-  console.log("Extracted contract text:", text.substring(0, 1000) + "...");
-
   // Updated regex to match AWS PPA format: "Contract Year X: ... Annual Committed Spend = $X with Y% Discount Rate"
   const yearRegex =
     /Contract Year (\d+):.*?Annual Committed Spend\s*=\s*\$?([\d,]+).*?with\s+([\d.]+)%\s*Discount Rate/gi;
@@ -57,10 +54,6 @@ const parseContractText = (text: string): ContractData => {
 
   if (eligibleMatch) {
     const serviceText = eligibleMatch[1];
-    console.log(
-      "Found eligible services section:",
-      serviceText.substring(0, 500)
-    );
 
     // Split by common delimiters and clean up
     const lines = serviceText.split(/[\n\r]+/);
@@ -137,10 +130,6 @@ const parseContractText = (text: string): ContractData => {
 
   // If we still don't have eligible services, try a more aggressive approach
   if (eligibleServices.length === 0) {
-    console.log(
-      "No eligible services found with primary method, trying fallback..."
-    );
-
     // Look for service names anywhere in the text after "Eligible Services"
     const eligibleSectionMatch = text.match(/Eligible Services.*$/is);
     if (eligibleSectionMatch) {
@@ -195,10 +184,6 @@ const parseContractText = (text: string): ContractData => {
   );
   if (excludedMatch) {
     const serviceText = excludedMatch[1];
-    console.log(
-      "Found excluded services section:",
-      serviceText.substring(0, 300)
-    );
 
     // Split by lines and check for service names
     const lines = serviceText.split(/[\n\r]+/);
@@ -227,13 +212,6 @@ const parseContractText = (text: string): ContractData => {
       }
     }
   }
-
-  console.log("Parsed results:", {
-    years: years.length,
-    eligibleServices: eligibleServices.length,
-    excludedServices: excludedServices.length,
-  });
-  console.log("Eligible services found:", eligibleServices);
 
   return { years, eligibleServices, excludedServices };
 };
